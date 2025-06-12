@@ -47,7 +47,7 @@ Some notes that I want to leave in before I forget
 
 *   **Multithreading:** The current code has commented out `#pragma omp` directives. It's because OpenMP does not play nicely with the Vita's CPU. Leaving it on led to crashes upon token generation. A significant performance boost could probably be seen by implementing a native multithreading solution using stuff in `SceThreadMgr` library in the sdk (?), especially for parallelizing the `matmul` ops in the transformer's forward pass. **For now this is all single threaded**.
 
-But I'm out of my depth in terms of development with the SDK, but it is something worth considering should I give this project another look though.
+But I'm out of my depth in terms of development with the SDK, though it is something worth considering should I give this project another look.
 
 
 
