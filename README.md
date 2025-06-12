@@ -37,7 +37,7 @@ Once the SDK is configured, clone the repository and run:
 cmake .
 ```
 
-This project would not be possible without Andrej Karpathy's foundational work on `llama2.c`.
+This project would not be possible without Andrej Karpathy's foundational work on `llama2.c`. This project was more of a port job if anything, but a great way to learn!
 
 ### Future Improvements
 
