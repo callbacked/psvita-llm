@@ -9,12 +9,10 @@ After blowing the dust off my PS Vita to play *LittleBigPlanet*, a stray questio
 Turns out it can! **PSVita-LLM** runs a modified version of `llama2.c` to load and infer the TinyStories 260K and 15M checkpoints right on the Vita.
 
 
-| Model | Parameters | File size | Inference speed (PCH-1000 Overclocked @ 555 MHz) |
-|-------|------------|-----------|---------------------------------------------------|
-| TinyStories-260K | 0.26 M | 1 MB | ≈ 120 tok/s  |
-| TinyStories-15M | 15 M | 60 MB | ≈ 1.8 tok/s |
-
-
+| Model | Parameters | File size | Inference speed (PCH-1000 Overclocked @ 555 MHz) | Results |
+|-------|------------|-----------|---------------------------------------------------|---------|
+| TinyStories-260K | 0.26 M | 1 MB | ≈ 120 tok/s | <img src="https://github.com/user-attachments/assets/9c643fa8-0ee4-44d6-958d-914520dbc3da" width="200"> |
+| TinyStories-15M | 15 M | 60 MB | ≈ 1.8 tok/s | <img src="https://github.com/user-attachments/assets/b5be21ad-2827-448d-86cf-54528be79bb7" width="200"> |
 
 ## Features
 
