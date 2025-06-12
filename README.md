@@ -4,7 +4,7 @@
 
 After blowing the dust off my PS Vita to play *LittleBigPlanet*, a stray question popped up:
 
-**Could an eleven-year-old handheld run an LLM?**
+**Could it run an LLM?**
 
 Turns out it can! **PSVita-LLM** runs a modified version of `llama2.c` to load and infer the TinyStories 260K and 15M checkpoints right on the Vita.
 
