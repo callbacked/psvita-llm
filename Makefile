@@ -117,63 +117,63 @@ depend:
 .PHONY : depend
 
 #=============================================================================
-# Target rules for targets named hello_world
+# Target rules for targets named psvita-llm
 
 # Build rule for target.
-hello_world: cmake_check_build_system
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 hello_world
-.PHONY : hello_world
+psvita-llm: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 psvita-llm
+.PHONY : psvita-llm
 
 # fast build rule for target.
-hello_world/fast:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/hello_world.dir/build.make CMakeFiles/hello_world.dir/build
-.PHONY : hello_world/fast
+psvita-llm/fast:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/psvita-llm.dir/build.make CMakeFiles/psvita-llm.dir/build
+.PHONY : psvita-llm/fast
 
 #=============================================================================
-# Target rules for targets named hello_world-velf
+# Target rules for targets named psvita-llm-velf
 
 # Build rule for target.
-hello_world-velf: cmake_check_build_system
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 hello_world-velf
-.PHONY : hello_world-velf
+psvita-llm-velf: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 psvita-llm-velf
+.PHONY : psvita-llm-velf
 
 # fast build rule for target.
-hello_world-velf/fast:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/hello_world-velf.dir/build.make CMakeFiles/hello_world-velf.dir/build
-.PHONY : hello_world-velf/fast
+psvita-llm-velf/fast:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/psvita-llm-velf.dir/build.make CMakeFiles/psvita-llm-velf.dir/build
+.PHONY : psvita-llm-velf/fast
 
 #=============================================================================
-# Target rules for targets named hello_world.self-self
+# Target rules for targets named psvita-llm.self-self
 
 # Build rule for target.
-hello_world.self-self: cmake_check_build_system
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 hello_world.self-self
-.PHONY : hello_world.self-self
+psvita-llm.self-self: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 psvita-llm.self-self
+.PHONY : psvita-llm.self-self
 
 # fast build rule for target.
-hello_world.self-self/fast:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/hello_world.self-self.dir/build.make CMakeFiles/hello_world.self-self.dir/build
-.PHONY : hello_world.self-self/fast
+psvita-llm.self-self/fast:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/psvita-llm.self-self.dir/build.make CMakeFiles/psvita-llm.self-self.dir/build
+.PHONY : psvita-llm.self-self/fast
 
 #=============================================================================
-# Target rules for targets named hello_world.vpk-vpk
+# Target rules for targets named psvita-llm.vpk-vpk
 
 # Build rule for target.
-hello_world.vpk-vpk: cmake_check_build_system
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 hello_world.vpk-vpk
-.PHONY : hello_world.vpk-vpk
+psvita-llm.vpk-vpk: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 psvita-llm.vpk-vpk
+.PHONY : psvita-llm.vpk-vpk
 
 # fast build rule for target.
-hello_world.vpk-vpk/fast:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/hello_world.vpk-vpk.dir/build.make CMakeFiles/hello_world.vpk-vpk.dir/build
-.PHONY : hello_world.vpk-vpk/fast
+psvita-llm.vpk-vpk/fast:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/psvita-llm.vpk-vpk.dir/build.make CMakeFiles/psvita-llm.vpk-vpk.dir/build
+.PHONY : psvita-llm.vpk-vpk/fast
 
 common/debugScreen.obj: common/debugScreen.c.obj
 .PHONY : common/debugScreen.obj
 
 # target to build an object file
 common/debugScreen.c.obj:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/hello_world.dir/build.make CMakeFiles/hello_world.dir/common/debugScreen.c.obj
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/psvita-llm.dir/build.make CMakeFiles/psvita-llm.dir/common/debugScreen.c.obj
 .PHONY : common/debugScreen.c.obj
 
 common/debugScreen.i: common/debugScreen.c.i
@@ -181,7 +181,7 @@ common/debugScreen.i: common/debugScreen.c.i
 
 # target to preprocess a source file
 common/debugScreen.c.i:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/hello_world.dir/build.make CMakeFiles/hello_world.dir/common/debugScreen.c.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/psvita-llm.dir/build.make CMakeFiles/psvita-llm.dir/common/debugScreen.c.i
 .PHONY : common/debugScreen.c.i
 
 common/debugScreen.s: common/debugScreen.c.s
@@ -189,32 +189,32 @@ common/debugScreen.s: common/debugScreen.c.s
 
 # target to generate assembly for a file
 common/debugScreen.c.s:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/hello_world.dir/build.make CMakeFiles/hello_world.dir/common/debugScreen.c.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/psvita-llm.dir/build.make CMakeFiles/psvita-llm.dir/common/debugScreen.c.s
 .PHONY : common/debugScreen.c.s
 
-src/main.obj: src/main.c.obj
-.PHONY : src/main.obj
+vita_llm.obj: vita_llm.c.obj
+.PHONY : vita_llm.obj
 
 # target to build an object file
-src/main.c.obj:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/hello_world.dir/build.make CMakeFiles/hello_world.dir/src/main.c.obj
-.PHONY : src/main.c.obj
+vita_llm.c.obj:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/psvita-llm.dir/build.make CMakeFiles/psvita-llm.dir/vita_llm.c.obj
+.PHONY : vita_llm.c.obj
 
-src/main.i: src/main.c.i
-.PHONY : src/main.i
+vita_llm.i: vita_llm.c.i
+.PHONY : vita_llm.i
 
 # target to preprocess a source file
-src/main.c.i:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/hello_world.dir/build.make CMakeFiles/hello_world.dir/src/main.c.i
-.PHONY : src/main.c.i
+vita_llm.c.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/psvita-llm.dir/build.make CMakeFiles/psvita-llm.dir/vita_llm.c.i
+.PHONY : vita_llm.c.i
 
-src/main.s: src/main.c.s
-.PHONY : src/main.s
+vita_llm.s: vita_llm.c.s
+.PHONY : vita_llm.s
 
 # target to generate assembly for a file
-src/main.c.s:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/hello_world.dir/build.make CMakeFiles/hello_world.dir/src/main.c.s
-.PHONY : src/main.c.s
+vita_llm.c.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/psvita-llm.dir/build.make CMakeFiles/psvita-llm.dir/vita_llm.c.s
+.PHONY : vita_llm.c.s
 
 # Help Target
 help:
@@ -224,16 +224,16 @@ help:
 	@echo "... depend"
 	@echo "... edit_cache"
 	@echo "... rebuild_cache"
-	@echo "... hello_world-velf"
-	@echo "... hello_world.self-self"
-	@echo "... hello_world.vpk-vpk"
-	@echo "... hello_world"
+	@echo "... psvita-llm-velf"
+	@echo "... psvita-llm.self-self"
+	@echo "... psvita-llm.vpk-vpk"
+	@echo "... psvita-llm"
 	@echo "... common/debugScreen.obj"
 	@echo "... common/debugScreen.i"
 	@echo "... common/debugScreen.s"
-	@echo "... src/main.obj"
-	@echo "... src/main.i"
-	@echo "... src/main.s"
+	@echo "... vita_llm.obj"
+	@echo "... vita_llm.i"
+	@echo "... vita_llm.s"
 .PHONY : help
 
 

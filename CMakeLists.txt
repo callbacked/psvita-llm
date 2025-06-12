@@ -15,23 +15,23 @@ endif()
 
 ## Define project parameters here
 # Name of the project
-project(hello_world)
+project(psvita-llm)
 # This line adds Vita helper macros, must go after project definition in order
 # to build Vita specific artifacts (self/vpk).
 include("${VITASDK}/share/vita.cmake" REQUIRED)
 
 ## Configuration options for this app
 # Display name (under bubble in LiveArea)
-set(VITA_APP_NAME "Hello World")
+set(VITA_APP_NAME "PSVita LLM")
 # Unique ID must be exactly 9 characters. Recommended: XXXXYYYYY where X =
 # unique string of developer and Y = a unique number for this app
-set(VITA_TITLEID  "VSDK00007")
+set(VITA_TITLEID  "LLMA00001")
 # Optional version string to show in LiveArea's more info screen
 set(VITA_VERSION  "01.00")
 
 ## Flags and includes for building
 # Note that we make sure not to overwrite previous flags
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wno-unused-function -Wno-unused-variable -mcpu=cortex-a9 -mfloat-abi=hard -mfpu=neon -O3 -Ofast -fno-signed-zeros -fno-trapping-math -fassociative-math -freciprocal-math -fopenmp")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 # Optional. You can specify more param.sfo flags this way.
 set(VITA_MKSFOEX_FLAGS "${VITA_MKSFOEX_FLAGS} -d PARENTAL_LEVEL=1")
@@ -50,12 +50,14 @@ link_directories(
 ## Build and link
 # Add all the files needed to compile here
 add_executable(${PROJECT_NAME}
-  src/main.c
+  vita_llm.c
   common/debugScreen.c
 )
 
 # Library to link to (drop the -l prefix). This will mostly be stubs.
 target_link_libraries(${PROJECT_NAME}
+  m
+  SceCtrl_stub
   SceLibKernel_stub # this line is only for demonstration. It's not needed as
                     # the most common stubs are automatically included.
   SceDisplay_stub   # This used by debugScreenPrintf()
