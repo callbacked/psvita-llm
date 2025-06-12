@@ -11,8 +11,9 @@ Turns out it can! **PSVita-LLM** runs a modified version of `llama2.c` to load a
 
 | Model | Parameters | File size | Inference speed (PCH-1000 Overclocked @ 555 MHz) | Results |
 |-------|------------|-----------|---------------------------------------------------|---------|
-| TinyStories-260K | 0.26 M | 1 MB | ≈ 120 tok/s | <img src="https://github.com/user-attachments/assets/9c643fa8-0ee4-44d6-958d-914520dbc3da" width="200"> |
-| TinyStories-15M | 15 M | 60 MB | ≈ 1.8 tok/s | <img src="https://github.com/user-attachments/assets/b5be21ad-2827-448d-86cf-54528be79bb7" width="200"> |
+| TinyStories-260K | 0.26 M | 1 MB | ≈ 120 tok/s | <img src="https://github.com/user-attachments/assets/1f1924cb-6be6-4b6e-8bee-5eef46ca1782" width="200"> |
+| TinyStories-15M | 15 M | 60 MB | ≈ 1.8 tok/s | <img src="https://github.com/user-attachments/assets/0b6ab797-211d-47fb-afcb-13d788cf44a8" width="200"> |
+
 
 ## Features
 
