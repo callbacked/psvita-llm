@@ -44,7 +44,7 @@ Some notes that I want to leave in before I forget
 
 *   **Breaking up some code:** Having everything in a single file like the original llama2.c file is pretty cool, but I should have seperated the networking code as I feel like that could be used in other projects that involve downloading stuff/doing curl calls on the internet, it'd be a good reference to have.
 
-*   **Multithreading:** The current code has commented out `#pragma omp` directives. It's because OpenMP does not play nicely with the Vita's CPU. Leaving it on led to crashes upon generation time. A significant performance boost could probably be seen by implementing a native multithreading solution using the sdk's `ScePthread` library, especially for parallelizing the `matmul` ops in the transformer's forward pass.
+*   **Multithreading:** The current code has commented out `#pragma omp` directives. It's because OpenMP does not play nicely with the Vita's CPU. Leaving it on led to crashes upon generation time. A significant performance boost could probably be seen by implementing a native multithreading solution using `SceThreadMgr` library in the sdk (?), especially for parallelizing the `matmul` ops in the transformer's forward pass.
 **For now this is all single threaded**.
 
 But I'm out of my depth in terms of development with the SDK, but it is something worth considering should I give this project another look though.
