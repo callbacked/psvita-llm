@@ -16,15 +16,14 @@ Turns out it can! **PSVita-LLM** runs a modified version of `llama2.c` to load a
 
 ## Features
 
-- **Interactive Model Selector:** On startup, the application scans the `ux0:data/` directory and presents a menu of all compatible models it finds.
-- **Full "Game Loop":** After a story is generated, you can choose to generate another, return to the model selection screen to switch models, or exit the application cleanly.
+- **Interactive Model Selector:** On startup, the app will prompt the user to a download model to start should it detect that there are no models downloaded.
+- **Full "Game Loop":** After a story is generated, you can choose to generate another, return to the model selection screen to switch/manage models, or exit the app completely.
 
 ## How to Use
 
 1.  **Install the VPK:** Transfer the `psvita-llm.vpk` file to your Vita and install it using VitaShell.
-2.  **Download Models & Tokenizers:** [Pending, I will provide a script for users to run]
-4.  **Place Files:** Copy your `.bin` model files and their corresponding tokenizer files (`tokenizer.bin`, `tok512.bin`) to the `ux0:data/` directory on your PS Vita's memory card.
-5.  **Launch the App:** 
+2.  **Download Models & Tokenizers:** Upon first boot, the program will give you the models available to download. You can delete models and download any other model after that in the "Manage local models.." menu.
+3. **Enjoy!**
 
 
 ## Building from Source

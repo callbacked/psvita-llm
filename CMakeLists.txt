@@ -36,9 +36,12 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 # Optional. You can specify more param.sfo flags this way.
 set(VITA_MKSFOEX_FLAGS "${VITA_MKSFOEX_FLAGS} -d PARENTAL_LEVEL=1")
 
+find_package(CURL REQUIRED)
+find_package(OpenSSL REQUIRED)
+
 # Add any additional include paths here
 include_directories(
-  common # This is for debugScreenPrintf(), you shouldn't need it in your projects
+  common
 )
 
 # Add any additional library paths here
@@ -58,9 +61,14 @@ add_executable(${PROJECT_NAME}
 target_link_libraries(${PROJECT_NAME}
   m
   SceCtrl_stub
-  SceLibKernel_stub # this line is only for demonstration. It's not needed as
-                    # the most common stubs are automatically included.
+  SceSysmodule_stub
+  SceNet_stub
+  SceNetCtl_stub
+  SceHttp_stub
+  SceSsl_stub
   SceDisplay_stub   # This used by debugScreenPrintf()
+  ${CURL_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
 )
 
 ## Create Vita files

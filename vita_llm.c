@@ -10,6 +10,12 @@
 #include <psp2/kernel/processmgr.h>
 #include <psp2/display.h>
 #include <psp2/ctrl.h>
+#include <psp2/sysmodule.h>
+#include <psp2/net/net.h>
+#include <psp2/net/netctl.h>
+#include <psp2/net/http.h>
+#include <psp2/io/fcntl.h>
+#include <curl/curl.h>
 #include "../common/debugScreen.h"
 #if defined _WIN32
     #include "win.h"
@@ -24,6 +30,9 @@
 #define COLOR_YELLOW "\x1b[33m"
 #define COLOR_CYAN   "\x1b[36m"
 
+// Fwd declaration
+void download_file(const char* url, const char* filepath);
+
 // ----------------------------------------------------------------------------
 // Transformer model
 
@@ -31,6 +40,9 @@ typedef struct {
     char* model_path;
     char* tokenizer_path;
     char* name;
+    char* model_url;
+    char* tokenizer_url;
+    char* tokenizer_name;
 } ModelSuite;
 
 typedef struct {
@@ -829,17 +841,288 @@ void read_stdin(const char* guide, char* buffer, size_t bufsize) {
     }
 }
 
-
-void display_model_selection_menu(ModelSuite* suites, int count, int* selected_index) {
+void display_manage_models_menu(ModelSuite* suites, int count) {
     SceCtrlData pad;
+    // wait for button release
+    while(sceCtrlPeekBufferPositive(0, &pad, 1), pad.buttons) { sceKernelDelayThread(16 * 1000); }
+    uint32_t old_buttons = 0;
+    int selection = 0;
+    int x = 0, y = 0;
+    
+    while (1) {
+        psvDebugScreenClear(0xFF000000);
+        psvDebugScreenSetCoordsXY(&x, &y);
+        psvDebugScreenPrintf(COLOR_CYAN "Manage Models:\n\n" COLOR_RESET);
+
+        for (int i = 0; i < count; i++) {
+            FILE* model_file = fopen(suites[i].model_path, "rb");
+            int is_downloaded = 0;
+            if(model_file){
+                fclose(model_file);
+                FILE* tokenizer_file = fopen(suites[i].tokenizer_path, "rb");
+                if(tokenizer_file){
+                    fclose(tokenizer_file);
+                    is_downloaded = 1;
+                }
+            }
+
+            if (i == selection) {
+                psvDebugScreenPrintf("-> ");
+            } else {
+                psvDebugScreenPrintf("   ");
+            }
+            
+            if (is_downloaded) {
+                 psvDebugScreenPrintf(COLOR_GREEN "%s (Downloaded)\n" COLOR_RESET, suites[i].name);
+            } else {
+                 psvDebugScreenPrintf(COLOR_YELLOW "%s (Not Downloaded)\n" COLOR_RESET, suites[i].name);
+            }
+        }
+        psvDebugScreenPrintf(COLOR_YELLOW "\nPress X to manage, O to go back.\n" COLOR_RESET);
+        
+        while(1) {
+            sceCtrlPeekBufferPositive(0, &pad, 1);
+            uint32_t pressed = pad.buttons & ~old_buttons;
+            old_buttons = pad.buttons;
+
+            if (pressed & SCE_CTRL_UP) {
+                selection = (selection > 0) ? selection - 1 : count - 1;
+                break;
+            }
+            if (pressed & SCE_CTRL_DOWN) {
+                selection = (selection < count - 1) ? selection + 1 : 0;
+                break;
+            }
+            if (pressed & SCE_CTRL_CIRCLE) {
+                return;
+            }
+            if (pressed & SCE_CTRL_CROSS) {
+                FILE* model_file = fopen(suites[selection].model_path, "rb");
+                int is_downloaded = 0;
+                if(model_file){
+                    fclose(model_file);
+                    FILE* tokenizer_file = fopen(suites[selection].tokenizer_path, "rb");
+                    if(tokenizer_file){
+                        fclose(tokenizer_file);
+                        is_downloaded = 1;
+                    }
+                }
+                
+                if (is_downloaded) {
+                    psvDebugScreenClear(0xFF000000);
+                    psvDebugScreenSetCoordsXY(&x, &y);
+                    psvDebugScreenPrintf(COLOR_RED "Delete %s and its tokenizer?\n\n" COLOR_RESET, suites[selection].name);
+                    psvDebugScreenPrintf(COLOR_YELLOW "Press X to confirm, O to cancel.\n" COLOR_RESET);
+
+                    while(1) {
+                        uint32_t confirm_pressed = 0;
+                        sceCtrlPeekBufferPositive(0, &pad, 1);
+                        confirm_pressed = pad.buttons & ~old_buttons;
+                        old_buttons = pad.buttons;
+
+                        if (confirm_pressed & SCE_CTRL_CIRCLE) {
+                            break; 
+                        }
+                        if (confirm_pressed & SCE_CTRL_CROSS) {
+                            sceIoRemove(suites[selection].model_path);
+                            sceIoRemove(suites[selection].tokenizer_path);
+                            psvDebugScreenClear(0xFF000000);
+                            psvDebugScreenSetCoordsXY(&x, &y);
+                            psvDebugScreenPrintf(COLOR_GREEN "Model deleted.\n" COLOR_RESET);
+                            sceKernelDelayThread(1 * 1000 * 1000);
+                            break; 
+                        }
+                        sceKernelDelayThread(16 * 1000);
+                    }
+                } else {
+                    psvDebugScreenClear(0xFF000000);
+                    psvDebugScreenSetCoordsXY(&x, &y);
+                    psvDebugScreenPrintf(COLOR_CYAN "Download %s and its tokenizer?\n\n" COLOR_RESET, suites[selection].name);
+                    psvDebugScreenPrintf(COLOR_YELLOW "Press X to confirm, O to cancel.\n" COLOR_RESET);
+
+                     while(1) {
+                        uint32_t confirm_pressed = 0;
+                        sceCtrlPeekBufferPositive(0, &pad, 1);
+                        confirm_pressed = pad.buttons & ~old_buttons;
+                        old_buttons = pad.buttons;
+
+                        if (confirm_pressed & SCE_CTRL_CIRCLE) {
+                            break;
+                        }
+                        if (confirm_pressed & SCE_CTRL_CROSS) {
+                            psvDebugScreenClear(0xFF000000);
+                            psvDebugScreenPrintf(COLOR_CYAN "Downloading %s...\n" COLOR_RESET, suites[selection].name);
+                            download_file(suites[selection].model_url, suites[selection].model_path);
+                            
+                            psvDebugScreenPrintf(COLOR_CYAN "Downloading tokenizer %s...\n" COLOR_RESET, suites[selection].tokenizer_name);
+                            download_file(suites[selection].tokenizer_url, suites[selection].tokenizer_path);
+
+                            psvDebugScreenPrintf(COLOR_GREEN "\nDownloads finished. Press X to continue.\n" COLOR_RESET);
+                            while(1){
+                                uint32_t continue_pressed = 0;
+                                sceCtrlPeekBufferPositive(0, &pad, 1);
+                                continue_pressed = pad.buttons & ~old_buttons;
+                                old_buttons = pad.buttons;
+                                if(continue_pressed & SCE_CTRL_CROSS) break;
+                                sceKernelDelayThread(16 * 1000);
+                            }
+                            break;
+                        }
+                        sceKernelDelayThread(16 * 1000);
+                    }
+                }
+                break;
+            }
+            sceKernelDelayThread(16 * 1000);
+        }
+    }
+}
+
+void netInit() {
+    sceSysmoduleLoadModule(SCE_SYSMODULE_NET);
+    SceNetInitParam netInitParam;
+    int size = 4 * 1024 * 1024;
+    netInitParam.memory = malloc(size);
+    netInitParam.size = size;
+    netInitParam.flags = 0;
+    sceNetInit(&netInitParam);
+    sceNetCtlInit();
+}
+
+void httpInit() {
+    sceSysmoduleLoadModule(SCE_SYSMODULE_HTTP);
+    sceHttpInit(4 * 1024 * 1024);
+}
+
+static size_t write_data_to_disk(void *ptr, size_t size, size_t nmemb, void *stream) {
+    return sceIoWrite(*(int*)stream, ptr, size * nmemb);
+}
+
+int progress_callback(void *clientp, curl_off_t dltotal, curl_off_t dlnow, curl_off_t ultotal, curl_off_t ulnow) {
+    // Only show progress for transfers over 10KB to filter out small HTTP responses (e.g. redirects)
+    if (dltotal > 10000) {
+        float percent = (float)dlnow / (float)dltotal * 100.0f;
+        psvDebugScreenPrintf("\rDownloading... %6.2f%%", percent);
+    }
+    return 0;
+}
+
+void download_file(const char* url, const char* filepath) {
+    CURL *curl;
+    CURLcode res;
+    int file_fd = sceIoOpen(filepath, SCE_O_WRONLY | SCE_O_CREAT | SCE_O_TRUNC, 0777);
+
+    if (file_fd < 0) {
+        psvDebugScreenPrintf(COLOR_RED "\nError opening file for writing: %s\n" COLOR_RESET, filepath);
+        return;
+    }
+
+    curl = curl_easy_init();
+    if (curl) {
+        curl_easy_setopt(curl, CURLOPT_URL, url);
+        curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_data_to_disk);
+        curl_easy_setopt(curl, CURLOPT_WRITEDATA, &file_fd);
+        curl_easy_setopt(curl, CURLOPT_XFERINFOFUNCTION, progress_callback);
+        curl_easy_setopt(curl, CURLOPT_NOPROGRESS, 0L);
+        curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);
+        curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0L);
+        curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, 0L);
+
+        res = curl_easy_perform(curl);
+        psvDebugScreenPrintf("\n");
+
+        if (res != CURLE_OK) {
+            psvDebugScreenPrintf(COLOR_RED "Download failed: %s\n" COLOR_RESET, curl_easy_strerror(res));
+        } else {
+            psvDebugScreenPrintf(COLOR_GREEN "Download successful!\n" COLOR_RESET);
+        }
+        curl_easy_cleanup(curl);
+    }
+    sceIoClose(file_fd);
+}
+
+void display_download_menu() {
+    SceCtrlData pad;
+    // wait for button release
+    while(sceCtrlPeekBufferPositive(0, &pad, 1), pad.buttons) { sceKernelDelayThread(16 * 1000); }
+    uint32_t old_buttons = 0;
+    int selection = 0;
+    int x = 0, y = 0;
+    const int num_options = 3;
+    const char* options[] = {"Download 15M Model", "Download 260K Model", "Back"};
+
+    ModelSuite suites[] = {
+        {"ux0:data/stories15M.bin", "ux0:data/tokenizer.bin", "stories15M", "https://huggingface.co/karpathy/tinyllamas/resolve/main/stories15M.bin", "https://raw.githubusercontent.com/karpathy/llama2.c/master/tokenizer.bin", "tokenizer.bin"},
+        {"ux0:data/stories260K.bin", "ux0:data/tok512.bin", "stories260K", "https://huggingface.co/karpathy/tinyllamas/resolve/main/stories260K/stories260K.bin", "https://huggingface.co/karpathy/tinyllamas/resolve/main/stories260K/tok512.bin", "tok512.bin"}
+    };
+
+    while(1) {
+        psvDebugScreenClear(0xFF000000);
+        psvDebugScreenSetCoordsXY(&x, &y);
+        psvDebugScreenPrintf(COLOR_CYAN "No models found. Would you like to download them?\n\n" COLOR_RESET);
+        for(int i=0; i < num_options; ++i) {
+            if(i == selection) {
+                psvDebugScreenPrintf("-> " COLOR_GREEN "%s\n" COLOR_RESET, options[i]);
+            } else {
+                psvDebugScreenPrintf("   %s\n", options[i]);
+            }
+        }
+        psvDebugScreenPrintf(COLOR_YELLOW "\nPress X to confirm, UP/DOWN to navigate.\n" COLOR_RESET);
+
+        while(1) {
+            sceCtrlPeekBufferPositive(0, &pad, 1);
+            uint32_t pressed = pad.buttons & ~old_buttons;
+            old_buttons = pad.buttons;
+
+            if(pressed & SCE_CTRL_UP) {
+                selection = (selection > 0) ? selection - 1 : num_options - 1;
+                break;
+            }
+            if(pressed & SCE_CTRL_DOWN) {
+                selection = (selection < num_options - 1) ? selection + 1 : 0;
+                break;
+            }
+            if(pressed & SCE_CTRL_CROSS) {
+                if(selection == 2) {
+                    psvDebugScreenPrintf(COLOR_RED "No models to load. Exiting.\n" COLOR_RESET);
+                    sceKernelDelayThread(2 * 1000 * 1000);
+                    sceKernelExitProcess(0);
+                }
+                
+                psvDebugScreenClear(0xFF000000);
+                psvDebugScreenPrintf(COLOR_CYAN "Downloading %s...\n" COLOR_RESET, suites[selection].name);
+                download_file(suites[selection].model_url, suites[selection].model_path);
+                
+                psvDebugScreenPrintf(COLOR_CYAN "Downloading tokenizer %s...\n" COLOR_RESET, suites[selection].tokenizer_name);
+                download_file(suites[selection].tokenizer_url, suites[selection].tokenizer_path);
+
+                psvDebugScreenPrintf(COLOR_GREEN "\nDownloads finished. Press X to continue.\n" COLOR_RESET);
+                 while(1){
+                    uint32_t confirm_pressed = 0;
+                    sceCtrlPeekBufferPositive(0, &pad, 1);
+                    confirm_pressed = pad.buttons & ~old_buttons;
+                    old_buttons = pad.buttons;
+                    if(confirm_pressed & SCE_CTRL_CROSS) break;
+                    sceKernelDelayThread(16 * 1000);
+                 }
+                return;
+            }
+             sceKernelDelayThread(16*1000);
+        }
+    }
+}
+
+void display_model_selection_menu(ModelSuite* suites, int count, int* selected_index, int* menu_action) {
+    SceCtrlData pad;
+    // wait for button release
+    while(sceCtrlPeekBufferPositive(0, &pad, 1), pad.buttons) { sceKernelDelayThread(16 * 1000); }
     uint32_t old_buttons = 0;
     int current_selection = 0;
-    sceCtrlSetSamplingMode(SCE_CTRL_MODE_ANALOG);
+    int x = 0, y = 0;
+    const int num_options = count + 1;
 
     while (1) {
-        // --- DRAWING ---
-        psvDebugScreenInit();
-        int x=0, y=0;
+        psvDebugScreenClear(0xFF000000);
         psvDebugScreenSetCoordsXY(&x, &y);
         psvDebugScreenPrintf(COLOR_CYAN "Select a model:\n\n" COLOR_RESET);
 
@@ -850,49 +1133,56 @@ void display_model_selection_menu(ModelSuite* suites, int count, int* selected_i
                 psvDebugScreenPrintf("   %s\n", suites[i].name);
             }
         }
+        
+        if (current_selection == count) {
+             psvDebugScreenPrintf("-> " COLOR_YELLOW "%s\n" COLOR_RESET, "Manage local models...");
+        } else {
+             psvDebugScreenPrintf("   %s\n", "Manage local models...");
+        }
+
         psvDebugScreenPrintf(COLOR_YELLOW "\nPress X to confirm, UP/DOWN to navigate.\n" COLOR_RESET);
 
-        // --- INPUT HANDLING (with debouncing) ---
         while (1) {
             sceCtrlPeekBufferPositive(0, &pad, 1);
-            uint32_t pressed_buttons = pad.buttons & ~old_buttons; // Buttons just pressed
-            old_buttons = pad.buttons; // Update state for next frame
+            uint32_t pressed_buttons = pad.buttons & ~old_buttons; 
+            old_buttons = pad.buttons; 
 
             if (pressed_buttons & SCE_CTRL_DOWN) {
-                current_selection = (current_selection < count - 1) ? current_selection + 1 : 0;
-                break; // A selection was made, break to redraw the screen
+                current_selection = (current_selection < num_options - 1) ? current_selection + 1 : 0;
+                break;
             }
             if (pressed_buttons & SCE_CTRL_UP) {
-                current_selection = (current_selection > 0) ? current_selection - 1 : count - 1;
-                break; // A selection was made, break to redraw the screen
+                current_selection = (current_selection > 0) ? current_selection - 1 : num_options - 1;
+                break;
             }
             if (pressed_buttons & SCE_CTRL_CROSS) {
-                *selected_index = current_selection;
-                return; // Final selection, exit the function
+                if(current_selection == count) {
+                    *menu_action = 1; // Manage models
+                } else {
+                    *menu_action = 0; // Load model
+                    *selected_index = current_selection;
+                }
+                return;
             }
-            sceKernelDelayThread(16 * 1000); // Poll at ~60Hz
+            sceKernelDelayThread(16 * 1000);
         }
     }
 }
 
 int main(int argc, char *argv[]) {
     psvDebugScreenInit();
-    
-    // Scale up the font
     PsvDebugScreenFont* current_font = psvDebugScreenGetFont();
     PsvDebugScreenFont* scaled_font = psvDebugScreenScaleFont2x(current_font);
     psvDebugScreenSetFont(scaled_font);
-
     psvDebugScreenPrintf(COLOR_CYAN "Application started.\n" COLOR_RESET);
-    SceCtrlData pad;
-    // default parameters
+    netInit();
+    httpInit();
 
     while (1) { 
         ModelSuite all_suites[] = {
-            {"ux0:data/stories15M.bin", "ux0:data/tokenizer.bin", "stories15M"},
-            {"ux0:data/stories260K.bin", "ux0:data/tok512.bin", "stories260K"},
+            {"ux0:data/stories15M.bin", "ux0:data/tokenizer.bin", "stories15M", "https://huggingface.co/karpathy/tinyllamas/resolve/main/stories15M.bin", "https://raw.githubusercontent.com/karpathy/llama2.c/master/tokenizer.bin", "tokenizer.bin"},
+            {"ux0:data/stories260K.bin", "ux0:data/tok512.bin", "stories260K", "https://huggingface.co/karpathy/tinyllamas/resolve/main/stories260K/stories260K.bin", "https://huggingface.co/karpathy/tinyllamas/resolve/main/stories260K/tok512.bin", "tok512.bin"}
         };
-
         ModelSuite found_suites[4];
         int found_count = 0;
 
@@ -912,19 +1202,21 @@ int main(int argc, char *argv[]) {
         char* tokenizer_path = NULL;
 
         if (found_count == 0) {
-            psvDebugScreenPrintf(COLOR_RED "Error: No compatible model and tokenizer pair found.\n" COLOR_RESET);
-            while(1) { sceKernelDelayThread(1000 * 1000); }
-        } else if (found_count == 1) {
-            checkpoint_path = found_suites[0].model_path;
-            tokenizer_path = found_suites[0].tokenizer_path;
-            psvDebugScreenPrintf(COLOR_CYAN "Found one model: %s\n" COLOR_RESET, checkpoint_path);
-            psvDebugScreenPrintf(COLOR_CYAN "Using tokenizer: %s\n" COLOR_RESET, tokenizer_path);
-        } else {
-            int selected_index = 0;
-            display_model_selection_menu(found_suites, found_count, &selected_index);
-            checkpoint_path = found_suites[selected_index].model_path;
-            tokenizer_path = found_suites[selected_index].tokenizer_path;
+            display_download_menu();
+            continue; 
+        } 
+        
+        int menu_action = 0;
+        int selected_index = 0;
+        display_model_selection_menu(found_suites, found_count, &selected_index, &menu_action);
+
+        if (menu_action == 1) {
+            display_manage_models_menu(all_suites, sizeof(all_suites) / sizeof(ModelSuite));
+            continue;
         }
+
+        checkpoint_path = found_suites[selected_index].model_path;
+        tokenizer_path = found_suites[selected_index].tokenizer_path;
 
         float temperature = 1.0f;
         float topp = 0.9f;
@@ -932,7 +1224,7 @@ int main(int argc, char *argv[]) {
         char *prompt = "Once upon a time";
         unsigned long long rng_seed = (unsigned int)time(NULL);
 
-        psvDebugScreenInit();
+        psvDebugScreenClear(0xFF000000);
         int x = 0, y = 0;
         psvDebugScreenSetCoordsXY(&x, &y);
         Transformer transformer;
@@ -943,26 +1235,28 @@ int main(int argc, char *argv[]) {
 
         Tokenizer tokenizer;
         build_tokenizer(&tokenizer, tokenizer_path, transformer.config.vocab_size);
-
         Sampler sampler;
         build_sampler(&sampler, transformer.config.vocab_size, temperature, topp, rng_seed);
-
-        // Clear the screen of loading text before starting the interactive loop
-        psvDebugScreenInit();
+        psvDebugScreenClear(0xFF000000);
         psvDebugScreenSetCoordsXY(&x, &y);
 
-        int main_loop_action = 0; // 0 = continue, 1 = break to exit app
+        int main_loop_action = 0; 
 
-        while(1){ // Story generation loop for the selected model
+        while(1){ 
             psvDebugScreenPrintf(COLOR_YELLOW "\nPress the X button to start generation.\n" COLOR_RESET);
+            uint32_t old_buttons = 0;
             while(1){
+                SceCtrlData pad;
                 sceCtrlPeekBufferPositive(0, &pad, 1);
-                if(pad.buttons & SCE_CTRL_CROSS)
+                 uint32_t pressed = pad.buttons & ~old_buttons;
+                old_buttons = pad.buttons;
+                if(pressed & SCE_CTRL_CROSS)
                     break;
                 sceKernelDelayThread(16 * 1000); 
             }
 
-            psvDebugScreenPrintf(COLOR_CYAN "\nGenerating text...\n" COLOR_RESET);
+            psvDebugScreenClear(0xFF000000);
+            psvDebugScreenSetCoordsXY(&x, &y);
             generate(&transformer, &tokenizer, &sampler, prompt, steps);
             psvDebugScreenPrintf(COLOR_GREEN "Text generation finished.\n" COLOR_RESET);
 
@@ -970,17 +1264,15 @@ int main(int argc, char *argv[]) {
             psvDebugScreenPrintf(COLOR_YELLOW "Press CIRCLE to change model\n" COLOR_RESET);
             psvDebugScreenPrintf(COLOR_YELLOW "Press X to exit.\n" COLOR_RESET);
 
-            int story_loop_action = 0; // 0 = new story, 1 = change model, 2 = exit app
-            uint32_t old_buttons = 0;
+            int story_loop_action = 0; 
+            old_buttons = 0;
             while(1) {
+                SceCtrlData pad;
                 sceCtrlPeekBufferPositive(0, &pad, 1);
                 uint32_t pressed_buttons = pad.buttons & ~old_buttons;
                 old_buttons = pad.buttons;
 
                 if (pressed_buttons & SCE_CTRL_SQUARE) {
-                    psvDebugScreenInit();
-                    int x = 0, y = 0;
-                    psvDebugScreenSetCoordsXY(&x, &y);
                     story_loop_action = 0;
                     break;
                 }
@@ -995,20 +1287,22 @@ int main(int argc, char *argv[]) {
                 sceKernelDelayThread(16 * 1000);
             }
 
-            if (story_loop_action == 0) { // New story
+            if (story_loop_action == 0) { 
+                psvDebugScreenClear(0xFF000000);
+                psvDebugScreenSetCoordsXY(&x, &y);
                 continue;
-            } else { // Change model or exit
+            } else { 
                 if (story_loop_action == 2) main_loop_action = 1;
                 break;
             }
         }
-
+        
         free_sampler(&sampler);
         free_tokenizer(&tokenizer);
         free_transformer(&transformer);
         
         if (main_loop_action == 1) {
-            break; // Exit the main application loop
+            break; 
         }
     }
 
